@@ -1,3 +1,6 @@
+'''
+Author: Hamish HD
+'''
 import pygame
 from pygame.locals import *
 import random
