@@ -1,0 +1,6 @@
+'''
+Date: 19/03/2026 Auther: HHD
+Purpose: Creating a start screen that takes user input.
+Setup:
+pip install pygame-gui
+'''
