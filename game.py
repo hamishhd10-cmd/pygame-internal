@@ -44,6 +44,9 @@ def draw_bird(surface, x, y):
 
 bird_x = width // 4
 bird_y = height // 2
+bird_velocity = 0
+gravity = 0.5
+flap_strength = -10
 running = True
 
 while running:
@@ -53,12 +56,26 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
+            elif event.key in (pygame.K_SPACE, pygame.K_UP):
+                bird_velocity = flap_strength
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            bird_velocity = flap_strength
+
+    bird_velocity += gravity
+    bird_y += bird_velocity
+
+    if bird_y < 20:
+        bird_y = 20
+        bird_velocity = 0
+    if bird_y > height - 20:
+        bird_y = height - 20
+        bird_velocity = 0
 
     draw_background(screen)
     draw_bird(screen, bird_x, bird_y)
 
     title_text = font.render("Flappy Bird Screen", True, (30, 30, 30))
-    info_text = font.render("Press ESC or close window to quit", True, (30, 30, 30))
+    info_text = font.render("Press SPACE / click to flap", True, (30, 30, 30))
     screen.blit(title_text, (20, 20))
     screen.blit(info_text, (20, 60))
 
