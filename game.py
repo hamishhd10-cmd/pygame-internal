@@ -13,11 +13,11 @@ pygame.display.set_caption("Flappy Bird - Background Screen")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 36)
 
-# def is a function definition in Python. The specific task of this function is to 
-# draw the background of the Flappy Bird starter screen. It takes a single argument, surface, which is the Pygame surface on which the background will be drawn. The function fills the surface with a sky blue color, draws a green ground, and adds some white clouds to create a visually appealing background for the game.
+ground_y = int(height * 0.75)
+
+
 def draw_background(surface):
     surface.fill((135, 206, 235))
-    ground_y = int(height * 0.75)
     pygame.draw.rect(surface, (111, 185, 76), (0, ground_y, width, height - ground_y))
     pygame.draw.rect(surface, (179, 139, 71), (0, ground_y, width, 40))
 
@@ -47,6 +47,27 @@ bird_y = height // 2
 bird_velocity = 0
 gravity = 0.5
 flap_strength = -10
+
+game_state = "start"
+message_text = "Press SPACE / click to start"
+
+
+def reset_game():
+    global bird_x, bird_y, bird_velocity, game_state, message_text
+    bird_x = width // 4
+    bird_y = height // 2
+    bird_velocity = 0
+    game_state = "playing"
+    message_text = "Press SPACE / click to flap"
+
+
+def show_start_screen(surface):
+    title_text = font.render("Flappy Bird", True, (30, 30, 30))
+    info_text = font.render(message_text, True, (30, 30, 30))
+    surface.blit(title_text, (20, 20))
+    surface.blit(info_text, (20, 60))
+
+
 running = True
 
 while running:
@@ -57,27 +78,39 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
             elif event.key in (pygame.K_SPACE, pygame.K_UP):
-                bird_velocity = flap_strength
+                if game_state == "start":
+                    reset_game()
+                else:
+                    bird_velocity = flap_strength
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            bird_velocity = flap_strength
+            if game_state == "start":
+                reset_game()
+            else:
+                bird_velocity = flap_strength
 
-    bird_velocity += gravity
-    bird_y += bird_velocity
+    if game_state == "playing":
+        bird_velocity += gravity
+        bird_y += bird_velocity
 
-    if bird_y < 20:
-        bird_y = 20
-        bird_velocity = 0
-    if bird_y > height - 20:
-        bird_y = height - 20
-        bird_velocity = 0
+        if bird_y < 20:
+            bird_y = 20
+            bird_velocity = 0
+
+        if bird_y + 20 >= ground_y:
+            game_state = "start"
+            message_text = "You died! Press SPACE / click to restart"
+            bird_x = width // 4
+            bird_y = height // 2
+            bird_velocity = 0
 
     draw_background(screen)
     draw_bird(screen, bird_x, bird_y)
 
-    title_text = font.render("Flappy Bird Screen", True, (30, 30, 30))
-    info_text = font.render("Press SPACE / click to flap", True, (30, 30, 30))
-    screen.blit(title_text, (20, 20))
-    screen.blit(info_text, (20, 60))
+    if game_state == "start":
+        show_start_screen(screen)
+    else:
+        info_text = font.render("Press SPACE / click to flap", True, (30, 30, 30))
+        screen.blit(info_text, (20, 20))
 
     pygame.display.update()
     clock.tick(60)
