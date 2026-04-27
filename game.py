@@ -12,13 +12,12 @@ import pygame
 import random
 import sys
 import os
-import json
 
 # Initialize Pygame modules
 pygame.init()
 
 # Constants for file paths and game settings
-LEADERBOARD_FILE = "leaderboard.txt"
+HIGH_SCORE_FILE = "highscore.txt"
 
 # Screen dimensions
 size = width, height = 600, 800
@@ -36,18 +35,21 @@ pipe_spawn_interval = 90  # Frames between pipe spawns
 pipe_spawn_timer = 0  # Timer for pipe spawning
 pipes = []  # List of active pipes
 score = 0  # Current game score
-leaderboard = [0, 0, 0, 0, 0]  # Top 5 scores
+high_score = 0  # Highest score achieved
 is_night = False  # Flag for night mode (changes background)
 frame_counter = 0  # Counter for animation frames
 
 # Bird skin options: list of (color, name) tuples
 bird_skins = [
-    ((255, 215, 0), "Gold"),
-    ((180, 180, 255), "Blue"),
-    ((255, 105, 180), "Pink"),
-    ((173, 255, 47), "Lime"),
-    ((255, 140, 0), "Orange"),
-    ((128, 0, 128), "Purple"),
+    ((255, 215, 0), "Goldfish"),
+    ((180, 180, 255), "super-man"),
+    ((255, 105, 180), "scary"),
+    ((173, 255, 47), "pickle"),
+    ((255, 140, 0), "tangerine"),
+    ((128, 0, 128), "hollow purple"),
+    ((139, 69, 19), "chocolate"),
+    ((0, 0, 0), "bat-man"),
+    ((255, 255, 255), "tighty whities"),
 ]
 # Current skin being previewed
 current_skin = {"color": bird_skins[0][0], "name": bird_skins[0][1]}
@@ -69,32 +71,28 @@ skin_grid_start_x = 40  # Starting X position for skin grid
 skin_grid_start_y = 200  # Starting Y position for skin grid
 skin_select_buttons = []  # List of button dictionaries for skin selection
 
-def load_leaderboard():
+def load_high_score():
     """
-    Load the leaderboard from the leaderboard file.
+    Load the high score from the high score file.
 
     Returns:
-        list: A list of top 5 scores, default [0,0,0,0,0] if file doesn't exist or is invalid.
+        int: The high score, or 0 if the file doesn't exist or is invalid.
     """
     try:
-        with open(LEADERBOARD_FILE, "r") as f:
-            data = json.load(f)
-            if isinstance(data, list) and len(data) == 5:
-                return data
-            else:
-                return [0, 0, 0, 0, 0]
+        with open(HIGH_SCORE_FILE, "r") as f:
+            return int(f.read())
     except:
-        return [0, 0, 0, 0, 0]
+        return 0
 
-def save_leaderboard(leaderboard):
+def save_high_score(score):
     """
-    Save the leaderboard to the file.
+    Save the given score as the new high score to the file.
 
     Args:
-        leaderboard (list): The list of top 5 scores to save.
+        score (int): The score to save.
     """
-    with open(LEADERBOARD_FILE, "w") as f:
-        json.dump(leaderboard, f)
+    with open(HIGH_SCORE_FILE, "w") as f:
+        f.write(str(score))
 
 def create_pipe():
     """
@@ -280,7 +278,7 @@ def draw_bird(surface, x, y, frame):
         ]
 
     # Draw eye and beak
-    pygame.draw.circle(surface, (0, 0, 0), eye_pos, 4)
+    pygame.draw.circle(surface, (255, 0, 0), eye_pos, 4)
     pygame.draw.polygon(surface, (255, 140, 0), beak_points)
 
 # Bird position and physics
@@ -364,7 +362,7 @@ def draw_skin_selection_screen(surface):
 
 def show_start_screen(surface):
     """
-    Draw the start screen with title, instructions, leaderboard, and skin info.
+    Draw the start screen with title, instructions, and skin info.
 
     Args:
         surface (pygame.Surface): The surface to draw on.
@@ -373,27 +371,23 @@ def show_start_screen(surface):
     title_text = font.render("Flappy Bird", True, (30, 30, 30))
     info_text = font.render("Press SPACE / click to start", True, (30, 30, 30))
     customize_info = font.render("Press ENTER to cycle skins", True, (30, 30, 30))
-    leaderboard_title = font.render("Leaderboard:", True, (30, 30, 30))
+    high_score_text = font.render(f"High Score: {high_score}", True, (30, 30, 30))
     skin_text = font.render(f"Current skin: {current_skin['name']}", True, (30, 30, 30))
     # Blit text to screen
     surface.blit(title_text, (20, 20))
     surface.blit(info_text, (20, 60))
     surface.blit(customize_info, (20, 100))
-    surface.blit(leaderboard_title, (20, 140))
-    # Display top 5 scores
-    for i in range(5):
-        lb_text = font.render(f"{i+1}. {leaderboard[i]}", True, (30, 30, 30))
-        surface.blit(lb_text, (20, 160 + i * 20))
-    surface.blit(skin_text, (20, 280))
+    surface.blit(high_score_text, (20, 140))
+    surface.blit(skin_text, (20, 180))
     # Draw customize button
     draw_button(surface, customize_button_rect, "Customize Bird")
     # Show skin message if active
     if skin_message_timer > 0:
         notice_text = font.render(skin_message, True, (255, 50, 50))
-        surface.blit(notice_text, (20, 320))
+        surface.blit(notice_text, (20, 220))
 
 # Load high score at startup
-leaderboard = load_leaderboard()
+high_score = load_high_score()
 running = True
 
 # Main game loop
@@ -470,12 +464,10 @@ while running:
 
             # Check for pipe collisions
             if bird_rect.colliderect(top_rect) or bird_rect.colliderect(bottom_rect):
-                # Game over: update leaderboard
-                global leaderboard
-                leaderboard.append(score)
-                leaderboard.sort(reverse=True)
-                leaderboard = leaderboard[:5]
-                save_leaderboard(leaderboard)
+                # Game over: update high score if needed
+                if score > high_score:
+                    high_score = score
+                    save_high_score(high_score)
                 game_state = "start"
                 message_text = "You died! Press SPACE / click to restart"
                 # Reset bird position
@@ -487,12 +479,10 @@ while running:
 
         # Check ground collision
         if bird_y + 20 >= ground_y:
-            # Game over: update leaderboard
-            global leaderboard
-            leaderboard.append(score)
-            leaderboard.sort(reverse=True)
-            leaderboard = leaderboard[:5]
-            save_leaderboard(leaderboard)
+            # Game over: update high score if needed
+            if score > high_score:
+                high_score = score
+                save_high_score(high_score)
             game_state = "start"
             message_text = "You died! Press SPACE / click to restart"
             # Reset bird position
